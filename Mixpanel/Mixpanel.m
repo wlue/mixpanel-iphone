@@ -35,6 +35,8 @@
 #define MixpanelDebug(...)
 #endif
 
+#define MIXPANEL_DEBUG_EVENT @"MIXPANEL_DEBUG"
+
 @interface Mixpanel () <UIAlertViewDelegate, MPSurveyNavigationControllerDelegate, MPNotificationViewControllerDelegate> {
     NSUInteger _flushInterval;
 }
@@ -637,6 +639,7 @@ static Mixpanel *sharedInstance = nil;
 
 - (void)flush
 {
+    [self track:[NSString stringWithFormat:@"%@: queueing flush", MIXPANEL_DEBUG_EVENT] properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[_eventsQueue count]]}];
     dispatch_async(self.serialQueue, ^{
         MixpanelDebug(@"%@ flush starting", self);
 
@@ -667,6 +670,8 @@ static Mixpanel *sharedInstance = nil;
 
 - (void)flushQueue:(NSMutableArray *)queue endpoint:(NSString *)endpoint
 {
+    [self track:[NSString stringWithFormat:@"%@: flushing", MIXPANEL_DEBUG_EVENT] properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[queue count]],
+                                                                                               @"endpoint": endpoint}];
     while ([queue count] > 0) {
         NSUInteger batchSize = ([queue count] > 50) ? 50 : [queue count];
         NSArray *batch = [queue subarrayWithRange:NSMakeRange(0, batchSize)];
@@ -685,12 +690,16 @@ static Mixpanel *sharedInstance = nil;
 
         if (error) {
             NSLog(@"%@ network failure: %@", self, error);
+            [self track:[NSString stringWithFormat:@"%@: network failure", MIXPANEL_DEBUG_EVENT] properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[queue count]],
+                                                                                                              @"endpoint": endpoint}];
             break;
         }
 
         NSString *response = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
         if ([response intValue] == 0) {
             NSLog(@"%@ %@ api rejected some items", self, endpoint);
+            [self track:[NSString stringWithFormat:@"%@: api rejected some items", MIXPANEL_DEBUG_EVENT] properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[queue count]],
+                                                                                                                      @"endpoint": endpoint}];
         };
 
         [queue removeObjectsInArray:batch];
