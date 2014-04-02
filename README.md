@@ -12,7 +12,7 @@ install the Mixpanel library, and create a new Xcode workspace. Open up this wor
         #import <Mixpanel/Mixpanel.h>
 
         - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-            [Mixpanel sharedInstanceWithToken:MIXPANEL_TOKEN];
+            [Mixpanel sharedInstanceWithToken:MIXPANEL_TOKEN andApiKey:API_KEY];
         }
 
 5. Start tracking actions in your app:
