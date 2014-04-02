@@ -100,11 +100,11 @@ static void MixpanelReachabilityCallback(SCNetworkReachabilityRef target, SCNetw
 
 static Mixpanel *sharedInstance = nil;
 
-+ (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken
++ (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken andApiKey:(NSString *)apiKey
 {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        sharedInstance = [[super alloc] initWithToken:apiToken andFlushInterval:60];
+            sharedInstance = [[super alloc] initWithToken:apiToken andApiKey:apiKey andFlushInterval:60];
     });
     return sharedInstance;
 }
@@ -117,7 +117,7 @@ static Mixpanel *sharedInstance = nil;
     return sharedInstance;
 }
 
-- (instancetype)initWithToken:(NSString *)apiToken andFlushInterval:(NSUInteger)flushInterval
+- (instancetype)initWithToken:(NSString *)apiToken andApiKey:(NSString *)apiKey andFlushInterval:(NSUInteger)flushInterval
 {
     if (apiToken == nil) {
         apiToken = @"";
@@ -125,9 +125,16 @@ static Mixpanel *sharedInstance = nil;
     if ([apiToken length] == 0) {
         NSLog(@"%@ warning empty api token", self);
     }
+    if (apiKey == nil) {
+        apiKey = @"";
+    }
+    if ([apiKey length] == 0) {
+        NSLog(@"%@ warning empty api key", self);
+    }
     if (self = [self init]) {
         self.people = [[MixpanelPeople alloc] initWithMixpanel:self];
         self.apiToken = apiToken;
+        self.apiKey = apiKey;
         _flushInterval = flushInterval;
         self.flushOnBackground = YES;
         self.showNetworkActivityIndicator = YES;
@@ -659,7 +666,7 @@ static Mixpanel *sharedInstance = nil;
 - (void)flushEvents
 {
     [self flushQueue:_eventsQueue
-            endpoint:@"/track/"];
+            endpoint:@"/import/"];
 }
 
 - (void)flushPeople
@@ -677,7 +684,7 @@ static Mixpanel *sharedInstance = nil;
         NSArray *batch = [queue subarrayWithRange:NSMakeRange(0, batchSize)];
 
         NSString *requestData = [self encodeAPIData:batch];
-        NSString *postBody = [NSString stringWithFormat:@"ip=1&data=%@", requestData];
+        NSString *postBody = [NSString stringWithFormat:@"api_key=%@&ip=1&data=%@", self.apiKey, requestData];
         MixpanelDebug(@"%@ flushing %lu of %lu to %@: %@", self, (unsigned long)[batch count], (unsigned long)[queue count], endpoint, queue);
         NSURLRequest *request = [self apiRequestWithEndpoint:endpoint andBody:postBody];
         NSError *error = nil;
