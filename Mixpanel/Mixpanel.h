@@ -207,7 +207,7 @@
 
  @param apiToken        your project token
  */
-+ (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken;
++ (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken andApiKey:(NSString *)apiKey;
 
 /*!
  @method
@@ -236,7 +236,7 @@
  @param apiToken        your project token
  @param flushInterval   interval to run background flushing
  */
-- (instancetype)initWithToken:(NSString *)apiToken andFlushInterval:(NSUInteger)flushInterval;
+- (instancetype)initWithToken:(NSString *)apiToken andApiKey:(NSString *)apiKey andFlushInterval:(NSUInteger)flushInterval;
 
 /*!
  @property
