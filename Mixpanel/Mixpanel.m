@@ -46,6 +46,7 @@
 @property (atomic, copy) NSString *distinctId;
 
 @property (nonatomic, copy) NSString *apiToken;
+@property (nonatomic, copy) NSString *apiKey;
 @property (atomic, strong) NSDictionary *superProperties;
 @property (nonatomic, strong) NSMutableDictionary *automaticProperties; // mutable because we update $wifi when reachability changes
 @property (nonatomic, strong) NSTimer *timer;
