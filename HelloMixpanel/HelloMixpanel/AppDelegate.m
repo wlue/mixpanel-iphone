@@ -6,6 +6,7 @@
 
 // IMPORTANT!!! replace with you api token from https://mixpanel.com/account/
 #define MIXPANEL_TOKEN @"YOUR_MIXPANEL_PROJECT_TOKEN"
+#define MIXPANEL_API_KEY @"YOUR_MIXPANEL_API_KEY"
 
 @implementation AppDelegate
 
@@ -17,7 +18,7 @@
     // Override point for customization after application launch.
 
     // Initialize the MixpanelAPI object
-    self.mixpanel = [Mixpanel sharedInstanceWithToken:MIXPANEL_TOKEN];
+    self.mixpanel = [Mixpanel sharedInstanceWithToken:MIXPANEL_TOKEN andApiKey:MIXPANEL_API_KEY];
 
     self.mixpanel.checkForSurveysOnActive = YES;
     self.mixpanel.showSurveyOnActive = YES; //Change this to NO to show your surveys manually.
