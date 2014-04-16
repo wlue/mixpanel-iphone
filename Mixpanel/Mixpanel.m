@@ -35,7 +35,7 @@
 #define MixpanelDebug(...)
 #endif
 
-#define MIXPANEL_DEBUG_EVENT @"MIXPANEL_DEBUG"
+#define MIXPANEL_DEBUG_EVENT @"MPDebug"
 
 @interface Mixpanel () <UIAlertViewDelegate, MPSurveyNavigationControllerDelegate, MPNotificationViewControllerDelegate> {
     NSUInteger _flushInterval;
