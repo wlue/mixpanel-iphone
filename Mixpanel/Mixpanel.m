@@ -101,20 +101,25 @@ static void MixpanelReachabilityCallback(SCNetworkReachabilityRef target, SCNetw
 
 static Mixpanel *sharedInstance = nil;
 
++ (Mixpanel *)sharedInstance
+{
+    if (sharedInstance == nil) {
+        NSLog(@"%@ warning sharedInstance called before sharedInstanceWithToken:", self);
+    }
+    return sharedInstance;
+}
+
++ (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken
+{
+    return [Mixpanel sharedInstanceWithToken:apiToken andApiKey:nil];
+}
+
 + (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken andApiKey:(NSString *)apiKey
 {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
             sharedInstance = [[super alloc] initWithToken:apiToken andApiKey:apiKey andFlushInterval:60];
     });
-    return sharedInstance;
-}
-
-+ (Mixpanel *)sharedInstance
-{
-    if (sharedInstance == nil) {
-        NSLog(@"%@ warning sharedInstance called before sharedInstanceWithToken:", self);
-    }
     return sharedInstance;
 }
 
@@ -482,21 +487,7 @@ static Mixpanel *sharedInstance = nil;
     [Mixpanel assertPropertyTypes:properties];
     NSNumber *epochSeconds = @(round([[NSDate date] timeIntervalSince1970]));
     dispatch_async(self.serialQueue, ^{
-        NSMutableDictionary *p = [NSMutableDictionary dictionary];
-        [p addEntriesFromDictionary:self.automaticProperties];
-        p[@"token"] = self.apiToken;
-        p[@"time"] = epochSeconds;
-        if (self.nameTag) {
-            p[@"mp_name_tag"] = self.nameTag;
-        }
-        if (self.distinctId) {
-            p[@"distinct_id"] = self.distinctId;
-        }
-        [p addEntriesFromDictionary:self.superProperties];
-        if (properties) {
-            [p addEntriesFromDictionary:properties];
-        }
-        NSDictionary *e = @{@"event": event, @"properties": [NSDictionary dictionaryWithDictionary:p]};
+        NSDictionary *e = [self compileEvent:event properties:properties time:epochSeconds];
         MixpanelLog(@"%@ queueing event: %@", self, e);
         [self.eventsQueue addObject:e];
         if ([self.eventsQueue count] > 500) {
@@ -506,6 +497,25 @@ static Mixpanel *sharedInstance = nil;
             [self archiveEvents];
         }
     });
+}
+
+- (NSDictionary *)compileEvent:(NSString *)event properties:(NSDictionary *)properties time:(NSNumber *)time
+{
+    NSMutableDictionary *p = [NSMutableDictionary dictionary];
+    [p addEntriesFromDictionary:self.automaticProperties];
+    p[@"token"] = self.apiToken;
+    p[@"time"] = time;
+    if (self.nameTag) {
+        p[@"mp_name_tag"] = self.nameTag;
+    }
+    if (self.distinctId) {
+        p[@"distinct_id"] = self.distinctId;
+    }
+    [p addEntriesFromDictionary:self.superProperties];
+    if (properties) {
+        [p addEntriesFromDictionary:properties];
+    }
+    return @{@"event": event, @"properties": [NSDictionary dictionaryWithDictionary:p]};
 }
 
 - (void)registerSuperProperties:(NSDictionary *)properties
@@ -647,7 +657,6 @@ static Mixpanel *sharedInstance = nil;
 
 - (void)flush
 {
-    [self track:[NSString stringWithFormat:@"%@: queueing flush", MIXPANEL_DEBUG_EVENT] properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[_eventsQueue count]]}];
     dispatch_async(self.serialQueue, ^{
         MixpanelDebug(@"%@ flush starting", self);
 
@@ -678,11 +687,15 @@ static Mixpanel *sharedInstance = nil;
 
 - (void)flushQueue:(NSMutableArray *)queue endpoint:(NSString *)endpoint
 {
-    [self track:[NSString stringWithFormat:@"%@: flushing", MIXPANEL_DEBUG_EVENT] properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[queue count]],
-                                                                                               @"endpoint": endpoint}];
     while ([queue count] > 0) {
         NSUInteger batchSize = ([queue count] > 50) ? 50 : [queue count];
-        NSArray *batch = [queue subarrayWithRange:NSMakeRange(0, batchSize)];
+        NSMutableArray *batch = [[queue subarrayWithRange:NSMakeRange(0, batchSize)] mutableCopy];
+        NSDictionary *flushEvent = [self compileEvent:[NSString stringWithFormat:@"%@: flushing", MIXPANEL_DEBUG_EVENT]
+                                            properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[batch count]],
+                                                         @"endpoint": endpoint}
+                                                  time:@(round([[NSDate date] timeIntervalSince1970]))];
+        [batch addObject:flushEvent];
+
 
         NSString *requestData = [self encodeAPIData:batch];
         NSString *postBody = [NSString stringWithFormat:@"api_key=%@&ip=1&data=%@", self.apiKey, requestData];
@@ -928,6 +941,7 @@ static Mixpanel *sharedInstance = nil;
     MixpanelDebug(@"%@ starting background cleanup task %lu", self, (unsigned long)self.taskId);
     
     if (self.flushOnBackground) {
+        [self track:[NSString stringWithFormat:@"%@: queueing background flush", MIXPANEL_DEBUG_EVENT] properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[_eventsQueue count]]}];
         [self flush];
     }
     

@@ -5,7 +5,8 @@
 #import "ViewController.h"
 
 // IMPORTANT!!! replace with you api token from https://mixpanel.com/account/
-#define MIXPANEL_TOKEN @"YOUR_MIXPANEL_PROJECT_TOKEN"
+#define MIXPANEL_TOKEN @"97a6811950e8b2299edbd4d8e1b1f76f"
+#define MIXPANEL_API_KEY @"2545d717d96390ae39afe770e6971965"
 
 @implementation AppDelegate
 
@@ -17,7 +18,7 @@
     // Override point for customization after application launch.
 
     // Initialize the MixpanelAPI object
-    self.mixpanel = [Mixpanel sharedInstanceWithToken:MIXPANEL_TOKEN];
+    self.mixpanel = [Mixpanel sharedInstanceWithToken:MIXPANEL_TOKEN andApiKey:MIXPANEL_API_KEY];
 
     self.mixpanel.checkForSurveysOnActive = YES;
     self.mixpanel.showSurveyOnActive = YES; //Change this to NO to show your surveys manually.
