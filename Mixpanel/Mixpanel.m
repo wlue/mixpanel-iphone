@@ -688,11 +688,12 @@ static Mixpanel *sharedInstance = nil;
 - (void)flushQueue:(NSMutableArray *)queue endpoint:(NSString *)endpoint
 {
     while ([queue count] > 0) {
-        NSUInteger batchSize = ([queue count] > 50) ? 50 : [queue count];
+        NSUInteger batchSize = ([queue count] > 40) ? 40 : [queue count];
         NSMutableArray *batch = [[queue subarrayWithRange:NSMakeRange(0, batchSize)] mutableCopy];
         NSDictionary *flushEvent = [self compileEvent:[NSString stringWithFormat:@"%@: flushing", MIXPANEL_DEBUG_EVENT]
                                             properties:@{@"event_count": [NSNumber numberWithUnsignedInt:[batch count]],
-                                                         @"endpoint": endpoint}
+                                                         @"endpoint": endpoint,
+                                                         @"debug version": @2}
                                                   time:@(round([[NSDate date] timeIntervalSince1970]))];
         [batch addObject:flushEvent];
 
