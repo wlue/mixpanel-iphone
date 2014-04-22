@@ -206,6 +206,7 @@
  the API.
 
  @param apiToken        your project token
+ @param apiKey          your API key
  */
 + (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken;
 + (Mixpanel *)sharedInstanceWithToken:(NSString *)apiToken andApiKey:(NSString *)apiKey;
